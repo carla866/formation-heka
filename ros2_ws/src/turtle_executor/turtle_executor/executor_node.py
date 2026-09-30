@@ -20,6 +20,18 @@ class ExecutorNode(Node):
         # self.publisher_ = ...
 
         # self.subscription = ...
+        self.publisher_= self.create_publisher(
+         Twist, 
+         '/turtle1/cmd_vel',
+         10
+
+        )
+        self.subscription_= self.create_subscription(
+            TrajectoryCommand,
+            '/trajectory_cmd',
+            self.command_callback,
+            10
+        )
 
         self.get_logger().info('executor_node demarre, en attente de /trajectory_cmd...')
 
@@ -31,11 +43,24 @@ class ExecutorNode(Node):
     # message Twist attendu par turtlesim (twist.linear.x et
     # twist.angular.z).
     # Indice : initialiser avec "twist = Twist()"
+    def command_callback(self, msg):
+        twist = Twist()
+
+        twist.linear.x = msg.linear_speed
+        twist.angular.z = msg.angular_speed
+
+        self.publisher_.publish(twist)
+
     # -----------------------------------------------------------------
 
     # -----------------------------------------------------------------
     # TODO 2 : Afficher un message de log lorsque msg.avoid_obstacle est a True.
     # -----------------------------------------------------------------
+
+        if msg.avoid_obstacle:
+            self.get_logger().info(
+            "Obstacle signalé : commande d'évitement reçue."
+            )
 
 
 def main(args=None):
