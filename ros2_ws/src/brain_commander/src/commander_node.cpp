@@ -9,6 +9,10 @@
 #include <chrono>
 #include <memory>
 
+#include <chrono>
+#include <functional>
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "trajectory_interfaces/msg/trajectory_command.hpp"
@@ -33,6 +37,14 @@ public:
     // obstacle_subscription_ = this->create_subscription<std_msgs::msg::Bool>(
     // "/obstacle_alert", 10,
     // std::bind(&CommanderNode::obstacle_callback, this, std::placeholders::_1));
+    obstacle_subscription_ =
+      this->create_subscription<std_msgs::msg::Bool>(
+        "/obstacle_alert",
+        10,
+        std::bind(
+          &CommanderNode::obstacle_callback,
+          this,
+          std::placeholders::_1));
 
     RCLCPP_INFO(this->get_logger(), "commander_node demarre.");
   }
@@ -58,15 +70,27 @@ private:
   // C'est a vous de le faire evoluer.
 
   // -----------------------------------------------------------------
+    void obstacle_callback(const std_msgs::msg::Bool::SharedPtr msg)
+  {
+    obstacle_detected_ = msg->data;
+  }
+  
   void publish_command()
   {
     auto message = trajectory_interfaces::msg::TrajectoryCommand();
 
-    message.linear_speed = 2.0;
-    message.angular_speed = 1.0;
-    message.avoid_obstacle = false;
-
-    publisher_->publish(message);
+    if (obstacle_detected_)
+    {
+      message.linear_speed = 0.0;
+      message.angular_speed = -2.0;
+      message.avoid_obstacle = true;
+    }
+    else
+    {
+      message.linear_speed = 2.0;
+      message.angular_speed = 1.0;
+      message.avoid_obstacle = false;
+    }
   }
 
   rclcpp::Publisher<
@@ -86,6 +110,10 @@ private:
   // est detecte (s'arreter ? reculer ? tourner ?), et de l'implementer
   // ici. Pensez a mettre message.avoid_obstacle a jour en consequence.
   // -----------------------------------------------------------------
+  bool obstacle_detected_ = false;
+
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr
+    obstacle_subscription_;
 };
 
 int main(int argc, char * argv[])
