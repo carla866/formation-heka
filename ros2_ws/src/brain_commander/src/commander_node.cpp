@@ -20,7 +20,13 @@ class CommanderNode : public rclcpp::Node
 public:
   CommanderNode()
   : Node("commander_node")
-  {
+  {    publisher_ = this->create_publisher<
+      trajectory_interfaces::msg::TrajectoryCommand>(
+      "/trajectory_cmd", 10);
+
+    timer_ = this->create_wall_timer(
+      100ms,
+      [this]() { publish_command(); });
 
     // Un noeud externe pour publier sur /obstacle_alert afin de simuler la detection d'un obstacle.
     //
@@ -32,6 +38,7 @@ public:
   }
 
 private:
+
 
   // -----------------------------------------------------------------
   // TODO 1 : Implementer une trajectoire non triviale.
@@ -49,8 +56,23 @@ private:
   //
   // Pour l'instant, ce squelette avance tout droit en continu.
   // C'est a vous de le faire evoluer.
-  // -----------------------------------------------------------------
 
+  // -----------------------------------------------------------------
+  void publish_command()
+  {
+    auto message = trajectory_interfaces::msg::TrajectoryCommand();
+
+    message.linear_speed = 2.0;
+    message.angular_speed = 1.0;
+    message.avoid_obstacle = false;
+
+    publisher_->publish(message);
+  }
+
+  rclcpp::Publisher<
+    trajectory_interfaces::msg::TrajectoryCommand>::SharedPtr publisher_;
+
+  rclcpp::TimerBase::SharedPtr timer_;
   // -----------------------------------------------------------------
   // TODO 2 : Reagir a la detection d'un obstacle.
   //
