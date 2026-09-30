@@ -91,6 +91,7 @@ private:
       message.angular_speed = 1.0;
       message.avoid_obstacle = false;
     }
+    publisher_->publish(message);
   }
 
   rclcpp::Publisher<
